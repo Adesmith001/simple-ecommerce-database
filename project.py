@@ -1,4 +1,5 @@
 import sqlite3
+import pandas as pd
 from datetime import datetime
 import sys
 
@@ -184,6 +185,23 @@ def add_payment(order_id, amount, payment_method, payment_status):
             VALUES (?, ?, ?, ?, ?)
         ''', (order_id, amount, date_paid, payment_method, payment_status))
 
+def export_to_excel():
+    with connect_to_database() as conn:
+        customers_df = pd.read_sql_query('SELECT * FROM Customer', conn)
+        products_df = pd.read_sql_query('SELECT * FROM Product', conn)
+        orders_df = pd.read_sql_query('SELECT * FROM "Order"', conn)
+        suppliers_df = pd.read_sql_query('SELECT * FROM Supplier', conn)
+        payment_methods_df = pd.read_sql_query('SELECT DISTINCT PaymentMethod FROM "Order"', conn)
+
+    with pd.ExcelWriter('ecommerce_data.xlsx', engine='xlsxwriter') as writer:
+        customers_df.to_excel(writer, sheet_name='Customers', index=False)
+        products_df.to_excel(writer, sheet_name='Products', index=False)
+        orders_df.to_excel(writer, sheet_name='Orders', index=False)
+        suppliers_df.to_excel(writer, sheet_name='Suppliers', index=False)
+        payment_methods_df.to_excel(writer, sheet_name='PaymentMethods', index=False)
+
+    print("Data exported to 'ecommerce_data.xlsx'.")
+
 def main():
     create_tables()
 
@@ -198,9 +216,10 @@ def main():
         print("8. View Orders")
         print("9. View Suppliers")
         print("10. View Payment Methods")
-        print("11. Exit")
+        print("11. Export to Excel")
+        print("12. Exit")
 
-        choice = input("Enter your choice (1-11): ")
+        choice = input("Enter your choice (1-12): ")
 
         if choice == '1':
             # Get user inputs for customer details
@@ -254,9 +273,11 @@ def main():
         elif choice == '10':
             view_payment_methods()
         elif choice == '11':
+            export_to_excel()
+        elif choice == '12':
             sys.exit("Exiting the application.")
         else:
-            print("Invalid choice. Please enter a valid option (1-11).")
+            print("Invalid choice. Please enter a valid option (1-12).")
 
 if __name__ == "__main__":
     main()
